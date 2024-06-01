@@ -8,10 +8,13 @@ services:
       --entrypoints.websecure.address=:443
       --providers.docker=true
       --providers.docker.exposedbydefault=false
+      --providers.file.directory=/etc/traefik
     ports:
       - 80:80
       - 443:443
     volumes:
+      # Mount the dynamic configuration file to add middlewares and routers etc.
+      - ./config/dynamic.yml:/etc/traefik/dynamic.yml:ro
       # Mount the Docker socket to allow traefik to listen to events
       - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:
