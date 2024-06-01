@@ -1,0 +1,12 @@
+services:
+  whoami:
+    image: traefik/whoami:v1.10.2
+    labels:
+      traefik.enable: true
+      traefik.http.routers.whoami.rule: Host(`whoami.local`)
+      traefik.http.routers.whoami.entrypoints: web
+
+networks:
+  default:
+    name: common
+    external: true
