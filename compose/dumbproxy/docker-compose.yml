@@ -1,0 +1,36 @@
+services:
+  certbot:
+    image: certbot/dns-cloudflare:v2.11.0
+    volumes:
+      - ./certbot/cloudflare.ini:/cloudflare.ini:ro
+      - ./certbot/letsencrypt:/etc/letsencrypt:rw
+    entrypoint: >
+      /bin/sh -c '
+      trap exit TERM;
+      while :; do
+        certbot certonly \
+          -d ${PROXY_DOMAIN_NAME:?} \
+          --dns-cloudflare \
+          --dns-cloudflare-credentials=/cloudflare.ini \
+          --register-unsafely-without-email \
+          --agree-tos;
+        sleep 12h & wait $${!};
+        certbot renew;
+      done'
+    
+  dumbproxy:
+    image: ghcr.io/senseunit/dumbproxy:1.11.5-alpine
+    restart: unless-stopped
+    user: "0"
+    ports:
+      - 90:443
+    command:
+      - -bind-address=:443
+      - -auth=basicfile://?path=/etc/dumbproxy.htpasswd
+      - -cert=/etc/letsencrypt/live/${PROXY_DOMAIN_NAME:?}/fullchain.pem
+      - -key=/etc/letsencrypt/live/${PROXY_DOMAIN_NAME:?}/privkey.pem
+    volumes:
+      - ./dumbproxy.htpasswd:/etc/dumbproxy.htpasswd:ro
+      - ./data:/.dumbproxy:rw
+      - ./certbot/letsencrypt:/etc/letsencrypt:ro
+
